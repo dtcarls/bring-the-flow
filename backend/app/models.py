@@ -16,6 +16,8 @@ class FieldParams(BaseModel):
     persistence: float = 0.5
     rotationOffset: float = 0.0
     curl: bool = False
+    angleMult: float = 1.0
+    noiseZ: float = 0.0
 
 
 class TracingParams(BaseModel):
@@ -30,6 +32,7 @@ class TracingParams(BaseModel):
 class StyleParams(BaseModel):
     strokeMin: float = 1.0
     strokeMax: float = 3.5
+    strokeOpacity: float = 1.0
     paletteId: str = "fidenza-warm"
     colorAssignment: Literal["random", "banded", "by-length", "by-angle"] = "random"
     background: str | None = None

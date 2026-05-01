@@ -1,6 +1,28 @@
 import { api } from "../api";
-import type { Palette, PaletteColor } from "../palettes/types";
+import type { Palette } from "../palettes/types";
 import { store } from "../state";
+
+function hexInput(
+  initial: string,
+  onCommit: (hex: string) => void,
+): HTMLInputElement {
+  const inp = document.createElement("input");
+  inp.type = "text";
+  inp.className = "hex-input";
+  inp.value = initial;
+  inp.placeholder = "#rrggbb";
+  inp.maxLength = 7;
+  inp.spellcheck = false;
+  inp.addEventListener("change", () => {
+    const hex = inp.value.trim();
+    if (/^#[0-9a-fA-F]{6}$/.test(hex)) {
+      onCommit(hex.toLowerCase());
+    } else {
+      inp.value = initial; // revert invalid
+    }
+  });
+  return inp;
+}
 
 export function mountPaletteEditor(host: HTMLElement, onChange: () => void): void {
   const render = () => {
@@ -15,7 +37,7 @@ export function mountPaletteEditor(host: HTMLElement, onChange: () => void): voi
     h.style.margin = "0 0 6px";
     host.append(h);
 
-    // Picker
+    // Palette selector
     const select = document.createElement("select");
     select.style.width = "100%";
     select.style.marginBottom = "8px";
@@ -34,72 +56,111 @@ export function mountPaletteEditor(host: HTMLElement, onChange: () => void): voi
     host.append(select);
 
     const current = store.currentPalette();
-    const inspired = current.inspiredBy
-      ? `Inspired by: ${current.inspiredBy}`
-      : null;
-    if (inspired) {
+    const isPreset = !current.id.startsWith("user-");
+
+    if (current.inspiredBy) {
       const note = document.createElement("div");
-      note.textContent = inspired;
+      note.textContent = `Inspired by: ${current.inspiredBy}`;
       note.style.fontSize = "11px";
       note.style.color = "var(--muted)";
       note.style.marginBottom = "6px";
       host.append(note);
     }
 
-    // Swatches
-    const swatchRow = document.createElement("div");
-    swatchRow.className = "palette-swatches";
-    const isPreset = !current.id.startsWith("user-");
+    // Color rows: swatch + color picker + hex input + weight input
+    const colorList = document.createElement("div");
+    colorList.className = "palette-color-list";
 
-    current.colors.forEach((c, idx) => {
+    current.colors.forEach((c) => {
+      const row = document.createElement("div");
+      row.className = "palette-color-row";
+
       const sw = document.createElement("div");
       sw.className = "palette-swatch";
       sw.style.background = c.hex;
-      const inp = document.createElement("input");
-      inp.type = "color";
-      inp.value = c.hex;
-      inp.disabled = isPreset;
-      inp.addEventListener("input", () => {
-        c.hex = inp.value;
-        sw.style.background = inp.value;
-        onChange();
-      });
-      sw.append(inp);
-      const w = document.createElement("span");
-      w.className = "weight";
-      w.textContent = String(c.weight ?? 1);
-      sw.append(w);
-      sw.title = `${c.hex} (weight ${c.weight ?? 1})`;
-      swatchRow.append(sw);
-    });
-    host.append(swatchRow);
 
-    // Background
-    if (current.background) {
-      const bgRow = document.createElement("div");
-      bgRow.className = "control-row";
-      const lbl = document.createElement("label");
-      lbl.textContent = "Background";
-      const swatch = document.createElement("div");
-      swatch.className = "palette-swatch";
-      swatch.style.background = current.background;
-      const inp = document.createElement("input");
-      inp.type = "color";
-      inp.value = current.background;
-      inp.disabled = isPreset;
-      inp.addEventListener("input", () => {
-        current.background = inp.value;
-        swatch.style.background = inp.value;
+      const colorPick = document.createElement("input");
+      colorPick.type = "color";
+      colorPick.value = c.hex;
+      sw.append(colorPick);
+
+      const hx = hexInput(c.hex, (hex) => {
+        c.hex = hex;
+        colorPick.value = hex;
+        sw.style.background = hex;
         onChange();
       });
-      swatch.append(inp);
-      bgRow.append(lbl, swatch);
-      host.append(bgRow);
-    }
+
+      colorPick.addEventListener("input", () => {
+        c.hex = colorPick.value;
+        hx.value = colorPick.value;
+        sw.style.background = colorPick.value;
+        onChange();
+      });
+
+      const weightInp = document.createElement("input");
+      weightInp.type = "number";
+      weightInp.className = "weight-input";
+      weightInp.value = String(c.weight ?? 1);
+      weightInp.min = "0.1";
+      weightInp.max = "10";
+      weightInp.step = "0.1";
+      weightInp.title = "Color weight — higher value = appears more often";
+      weightInp.addEventListener("change", () => {
+        const w = parseFloat(weightInp.value);
+        if (!isNaN(w) && w > 0) {
+          c.weight = w;
+          onChange();
+        } else {
+          weightInp.value = String(c.weight ?? 1);
+        }
+      });
+
+      row.append(sw, hx, weightInp);
+      colorList.append(row);
+    });
+    host.append(colorList);
+
+    // Background row
+    const bgVal = current.background ?? "#ffffff";
+    const bgRow = document.createElement("div");
+    bgRow.className = "palette-color-row";
+    bgRow.style.marginTop = "4px";
+
+    const bgSwatch = document.createElement("div");
+    bgSwatch.className = "palette-swatch";
+    bgSwatch.style.background = bgVal;
+    const bgPick = document.createElement("input");
+    bgPick.type = "color";
+    bgPick.value = bgVal;
+    bgSwatch.append(bgPick);
+
+    const bgHex = hexInput(bgVal, (hex) => {
+      current.background = hex;
+      bgPick.value = hex;
+      bgSwatch.style.background = hex;
+      onChange();
+    });
+
+    bgPick.addEventListener("input", () => {
+      current.background = bgPick.value;
+      bgHex.value = bgPick.value;
+      bgSwatch.style.background = bgPick.value;
+      onChange();
+    });
+
+    const bgLabel = document.createElement("span");
+    bgLabel.textContent = "Background";
+    bgLabel.style.fontSize = "11px";
+    bgLabel.style.color = "var(--muted)";
+
+    bgRow.append(bgSwatch, bgHex, bgLabel);
+    host.append(bgRow);
 
     // Color assignment
     const assignRow = document.createElement("div");
     assignRow.className = "control-row";
+    assignRow.style.marginTop = "8px";
     const aLbl = document.createElement("label");
     aLbl.textContent = "Assignment";
     const aSel = document.createElement("select");
@@ -118,30 +179,14 @@ export function mountPaletteEditor(host: HTMLElement, onChange: () => void): voi
     assignRow.append(aLbl, aSel);
     host.append(assignRow);
 
-    // Action buttons
-    const actions = document.createElement("div");
-    actions.style.display = "flex";
-    actions.style.gap = "6px";
-    actions.style.marginTop = "10px";
-    actions.style.flexWrap = "wrap";
-
-    const dup = document.createElement("button");
-    dup.textContent = "Duplicate";
-    dup.addEventListener("click", async () => {
-      const created = await api.createPalette({
-        name: current.name + " (copy)",
-        colors: current.colors.map((c) => ({ ...c })),
-        background: current.background,
-        inspiredBy: current.inspiredBy,
-      });
-      store.palettes.push(created);
-      store.params.style.paletteId = created.id;
-      onChange();
-      render();
-    });
-    actions.append(dup);
-
+    // Action buttons for user palettes
     if (!isPreset) {
+      const actions = document.createElement("div");
+      actions.style.display = "flex";
+      actions.style.gap = "6px";
+      actions.style.marginTop = "10px";
+      actions.style.flexWrap = "wrap";
+
       const save = document.createElement("button");
       save.textContent = "Save edits";
       save.className = "primary";
@@ -153,6 +198,7 @@ export function mountPaletteEditor(host: HTMLElement, onChange: () => void): voi
           inspiredBy: current.inspiredBy,
         });
       });
+
       const del = document.createElement("button");
       del.textContent = "Delete";
       del.className = "danger";
@@ -164,10 +210,40 @@ export function mountPaletteEditor(host: HTMLElement, onChange: () => void): voi
         onChange();
         render();
       });
+
       actions.append(save, del);
+      host.append(actions);
     }
 
-    host.append(actions);
+    // Save as new preset (always available)
+    const newSection = document.createElement("div");
+    newSection.className = "new-preset-section";
+
+    const nameInp = document.createElement("input");
+    nameInp.type = "text";
+    nameInp.placeholder = isPreset ? "New preset name…" : "Save as new preset…";
+    nameInp.style.flex = "1";
+    nameInp.style.minWidth = "0";
+
+    const saveAsBtn = document.createElement("button");
+    saveAsBtn.textContent = "Save as preset";
+    saveAsBtn.addEventListener("click", async () => {
+      const name = nameInp.value.trim() || (current.name + " (copy)");
+      const created = await api.createPalette({
+        name,
+        colors: current.colors.map((c) => ({ ...c })),
+        background: current.background,
+        inspiredBy: current.inspiredBy,
+      });
+      store.palettes.push(created);
+      store.params.style.paletteId = created.id;
+      nameInp.value = "";
+      onChange();
+      render();
+    });
+
+    newSection.append(nameInp, saveAsBtn);
+    host.append(newSection);
   };
 
   store.subscribe(render);

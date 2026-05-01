@@ -9,6 +9,8 @@ export interface ProjectParams {
     persistence: number;
     rotationOffset: number;
     curl: boolean;
+    angleMult: number;
+    noiseZ: number;
   };
   tracing: {
     lineSpacing: number;
@@ -21,6 +23,7 @@ export interface ProjectParams {
   style: {
     strokeMin: number;
     strokeMax: number;
+    strokeOpacity: number;
     paletteId: string;
     colorAssignment: "random" | "banded" | "by-length" | "by-angle";
     background: string | null;

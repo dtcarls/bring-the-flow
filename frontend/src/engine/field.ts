@@ -7,6 +7,8 @@ export interface FieldParams {
   persistence: number;
   rotationOffset: number; // radians
   curl: boolean;
+  angleMult: number;
+  noiseZ: number;
 }
 
 /**
@@ -21,17 +23,17 @@ export class FlowField {
   }
 
   angleAt(x: number, y: number): number {
-    const { noiseScale, octaves, persistence, rotationOffset, curl } = this.params;
+    const { noiseScale, octaves, persistence, rotationOffset, curl, angleMult, noiseZ } = this.params;
     if (!curl) {
-      const n = this.noise.fbm(x * noiseScale, y * noiseScale, 0, octaves, persistence);
-      // Map [-1, 1] noise to [0, 2π].
-      return n * Math.PI + rotationOffset;
+      const n = this.noise.fbm(x * noiseScale, y * noiseScale, noiseZ, octaves, persistence);
+      // Map [-1, 1] noise to angle range controlled by angleMult.
+      return n * Math.PI * angleMult + rotationOffset;
     }
     const eps = 1.0;
-    const nx1 = this.noise.fbm((x + eps) * noiseScale, y * noiseScale, 0, octaves, persistence);
-    const nx0 = this.noise.fbm((x - eps) * noiseScale, y * noiseScale, 0, octaves, persistence);
-    const ny1 = this.noise.fbm(x * noiseScale, (y + eps) * noiseScale, 0, octaves, persistence);
-    const ny0 = this.noise.fbm(x * noiseScale, (y - eps) * noiseScale, 0, octaves, persistence);
+    const nx1 = this.noise.fbm((x + eps) * noiseScale, y * noiseScale, noiseZ, octaves, persistence);
+    const nx0 = this.noise.fbm((x - eps) * noiseScale, y * noiseScale, noiseZ, octaves, persistence);
+    const ny1 = this.noise.fbm(x * noiseScale, (y + eps) * noiseScale, noiseZ, octaves, persistence);
+    const ny0 = this.noise.fbm(x * noiseScale, (y - eps) * noiseScale, noiseZ, octaves, persistence);
     const dnx = (nx1 - nx0) / (2 * eps);
     const dny = (ny1 - ny0) / (2 * eps);
     // perpendicular gradient -> divergence-free flow
