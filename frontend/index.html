@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>bring-the-flow</title>
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body>
+    <div id="app">
+      <header class="topbar">
+        <h1>bring-the-flow</h1>
+        <div class="topbar-actions">
+          <select id="project-select" aria-label="Project"></select>
+          <button id="project-new">New</button>
+          <button id="project-save">Save</button>
+          <button id="project-delete" class="danger">Delete</button>
+          <button id="export-open" class="primary">Render print-res…</button>
+        </div>
+      </header>
+      <main>
+        <aside class="sidebar">
+          <section id="controls"></section>
+        </aside>
+        <section class="canvas-wrap">
+          <canvas id="preview"></canvas>
+          <div id="status" class="status"></div>
+        </section>
+        <aside class="rightbar">
+          <section id="palette-panel"></section>
+          <section id="layers-panel"></section>
+        </aside>
+      </main>
+      <dialog id="export-dialog">
+        <form method="dialog" id="export-form">
+          <h2>Render print-res</h2>
+          <label>Paper size
+            <select name="paperSize">
+              <option>A5</option><option>A4</option>
+              <option selected>A3</option><option>A2</option>
+              <option>Letter</option><option>Legal</option>
+              <option>Tabloid</option><option>Square</option>
+            </select>
+          </label>
+          <label>Orientation
+            <select name="orientation">
+              <option value="portrait" selected>Portrait</option>
+              <option value="landscape">Landscape</option>
+            </select>
+          </label>
+          <label>DPI
+            <input name="dpi" type="number" value="300" min="72" max="600" />
+          </label>
+          <label>Format
+            <select name="format">
+              <option value="pdf" selected>PDF</option>
+              <option value="png">PNG</option>
+              <option value="svg">SVG</option>
+            </select>
+          </label>
+          <menu>
+            <button value="cancel">Cancel</button>
+            <button value="confirm" class="primary">Render</button>
+          </menu>
+        </form>
+      </dialog>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

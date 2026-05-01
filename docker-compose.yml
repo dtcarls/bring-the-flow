@@ -1,0 +1,10 @@
+services:
+  app:
+    build: .
+    image: bring-the-flow:latest
+    container_name: bring-the-flow
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/data
+    restart: unless-stopped
