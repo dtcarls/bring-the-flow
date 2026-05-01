@@ -107,9 +107,96 @@ function toggle(
 }
 
 export function mountControls(host: HTMLElement, onChange: () => void): void {
+  // --- Preset helpers ---
+  const PRESET_KEY = "btf-presets";
+  function loadPresets(): Record<string, any> {
+    try {
+      return JSON.parse(localStorage.getItem(PRESET_KEY) || "{}") || {};
+    } catch {
+      return {};
+    }
+  }
+  function savePresets(presets: Record<string, any>) {
+    localStorage.setItem(PRESET_KEY, JSON.stringify(presets));
+  }
+
+  function saveCurrentPreset(name: string) {
+    if (!name) return;
+    const presets = loadPresets();
+    presets[name] = JSON.parse(JSON.stringify(store.params));
+    savePresets(presets);
+  }
+  function loadPresetToStore(name: string) {
+    const presets = loadPresets();
+    if (presets[name]) {
+      Object.assign(store.params, JSON.parse(JSON.stringify(presets[name])));
+      store.emit();
+    }
+  }
+
   const render = () => {
     host.innerHTML = "";
     const p = store.params;
+
+    // --- Preset UI ---
+    const presetRow = document.createElement("div");
+    presetRow.className = "control-row";
+    presetRow.style.display = "flex";
+    presetRow.style.gap = "6px";
+    presetRow.style.alignItems = "center";
+
+    // Dropdown
+    const presetSelect = document.createElement("select");
+    presetSelect.style.flex = "1";
+    const presets = loadPresets();
+    const defaultOpt = document.createElement("option");
+    defaultOpt.value = "";
+    defaultOpt.textContent = "Select preset...";
+    presetSelect.append(defaultOpt);
+    for (const name of Object.keys(presets)) {
+      const opt = document.createElement("option");
+      opt.value = name;
+      opt.textContent = name;
+      presetSelect.append(opt);
+    }
+    presetSelect.addEventListener("change", () => {
+      if (presetSelect.value) {
+        loadPresetToStore(presetSelect.value);
+        onChange();
+      }
+    });
+
+    // Textbox
+    const presetInput = document.createElement("input");
+    presetInput.type = "text";
+    presetInput.placeholder = "Preset name";
+    presetInput.style.flex = "1";
+
+
+    // Save button (now below the input)
+    const saveBtn = document.createElement("button");
+    saveBtn.type = "button";
+    saveBtn.textContent = "Save preset";
+    saveBtn.style.marginTop = "4px";
+    saveBtn.addEventListener("click", () => {
+      const name = presetInput.value.trim();
+      if (name) {
+        saveCurrentPreset(name);
+        presetInput.value = "";
+        render(); // refresh dropdown
+      }
+    });
+
+    // Layout: dropdown on top, then input, then button below
+    const presetCol = document.createElement("div");
+    presetCol.style.display = "flex";
+    presetCol.style.flexDirection = "column";
+    presetCol.style.flex = "1";
+    presetCol.style.gap = "2px";
+    presetCol.append(presetInput, saveBtn);
+
+    presetRow.append(presetSelect, presetCol);
+    host.append(presetRow);
 
     // Seed row
     const seedRow = document.createElement("div");
