@@ -1,8 +1,7 @@
 # bring-the-flow
 
 A Dockerized web app for planning and creating physical flow-field art, inspired
-by Tyler Hobbs's *Fidenza*, *Bring the End*, *Return One*, *Blue Literal*, and
-*Red Literal*.
+by Tyler Hobbs's *Fidenza*, *Bring the End*, *Return One*, and *Blue Literal*.
 
 You tweak parameters of a flow field with live sliders, overlay color palettes
 inspired by those works, toggle the underlying field on/off, and render
