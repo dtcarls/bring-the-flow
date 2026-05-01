@@ -11,6 +11,8 @@ export function defaultParams(): ProjectParams {
       persistence: 0.5,
       rotationOffset: 0,
       curl: false,
+      angleMult: 1.0,
+      noiseZ: 0.0,
     },
     tracing: {
       lineSpacing: 6,
@@ -23,6 +25,7 @@ export function defaultParams(): ProjectParams {
     style: {
       strokeMin: 1.0,
       strokeMax: 3.5,
+      strokeOpacity: 1.0,
       paletteId: "fidenza-warm",
       colorAssignment: "random",
       background: null,

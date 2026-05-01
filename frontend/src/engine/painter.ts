@@ -6,6 +6,7 @@ import type { Palette } from "../palettes/types";
 export interface StyleParams {
   strokeMin: number;
   strokeMax: number;
+  strokeOpacity: number;
   colorAssignment: "random" | "banded" | "by-length" | "by-angle";
   background: string | null;
 }
@@ -85,6 +86,7 @@ export function paintCanvas(ctx: CanvasRenderingContext2D, input: RenderInput): 
     const styled = styleLines(input);
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
+    ctx.globalAlpha = style.strokeOpacity ?? 1;
     for (const s of styled) {
       ctx.strokeStyle = s.color;
       ctx.lineWidth = s.width;
@@ -95,6 +97,7 @@ export function paintCanvas(ctx: CanvasRenderingContext2D, input: RenderInput): 
       }
       ctx.stroke();
     }
+    ctx.globalAlpha = 1;
   }
   ctx.restore();
 }
@@ -114,8 +117,10 @@ export function paintSvg(input: RenderInput): string {
 
   if (layers.showColors) {
     const styled = styleLines(input);
+    const opacity = style.strokeOpacity ?? 1;
+    const opacityAttr = opacity < 1 ? ` opacity="${opacity.toFixed(2)}"` : "";
     parts.push(
-      '<g fill="none" stroke-linecap="round" stroke-linejoin="round">',
+      `<g fill="none" stroke-linecap="round" stroke-linejoin="round"${opacityAttr}>`,
     );
     for (const s of styled) {
       const d = pointsToPathD(s.points);
