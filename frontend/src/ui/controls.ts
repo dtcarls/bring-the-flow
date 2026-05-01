@@ -152,10 +152,13 @@ export function mountControls(host: HTMLElement, onChange: () => void): void {
         slider({
           label: "Noise scale",
           description: "Controls the zoom level of the noise field. Lower values create long sweeping curves; higher values produce tightly curling patterns.",
-          min: 0.0005, max: 0.02, step: 0.0001,
-          get: () => p.field.noiseScale,
-          set: (v) => (p.field.noiseScale = v),
-          format: (v) => v.toFixed(4),
+          min: 1, max: 100, step: 1,
+          get: () => Math.round((p.field.noiseScale - 0.0001) / (0.01 - 0.0001) * 99 + 1),
+          set: (v) => {
+            // Map 1-100 to 0.0001-0.01
+            p.field.noiseScale = 0.0001 + ((v - 1) / 99) * (0.01 - 0.0001);
+          },
+          format: (v) => String(Math.round(v)),
         }, onChange),
         slider({
           label: "Octaves",
@@ -210,7 +213,7 @@ export function mountControls(host: HTMLElement, onChange: () => void): void {
         slider({
           label: "Line spacing",
           description: "Minimum separation distance between adjacent curves. Smaller values pack curves tightly for a dense look; larger values leave breathing room. Tyler Hobbs identifies this as one of the most impactful parameters.",
-          min: 2, max: 40, step: 0.5,
+          min: -2, max: 40, step: 0.5,
           get: () => p.tracing.lineSpacing,
           set: (v) => (p.tracing.lineSpacing = v),
           format: (v) => v.toFixed(1),
