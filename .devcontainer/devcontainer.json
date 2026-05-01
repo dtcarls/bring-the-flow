@@ -1,0 +1,44 @@
+{
+  "name": "bring-the-flow",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "workspaceFolder": "/workspaces/bring-the-flow",
+  "forwardPorts": [8080, 5173],
+  "portsAttributes": {
+    "8080": { "label": "Backend (uvicorn)" },
+    "5173": { "label": "Frontend (vite)" }
+  },
+  "postCreateCommand": "cd /workspaces/bring-the-flow/frontend && npm install",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.pylance",
+        "ms-python.vscode-pylance",
+        "charliermarsh.ruff",
+        "svelte.svelte-vscode",
+        "esbenp.prettier-vscode",
+        "vue.volar",
+        "dbaeumer.vscode-eslint",
+        "eamodio.gitlens"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.terminal.activateEnvironment": false,
+        "[python]": {
+          "editor.defaultFormatter": "charliermarsh.ruff"
+        },
+        "[typescript]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode"
+        },
+        "editor.formatOnSave": true,
+        "terminal.integrated.defaultProfile.linux": "bash"
+      }
+    }
+  },
+  "remoteEnv": {
+    "BTF_DATA_DIR": "/workspaces/bring-the-flow/data"
+  }
+}
