@@ -31,12 +31,12 @@ export function mountLayersPanel(host: HTMLElement, onChange: () => void): void 
     };
 
     host.append(mkToggle("Show colors", "showColors"));
-    host.append(mkToggle("Show flow field", "showFlowField"));
+    host.append(mkToggle("Show paint guidelines", "showFlowField"));
 
     const opacityRow = document.createElement("div");
     opacityRow.className = "control-row";
     const lbl = document.createElement("label");
-    lbl.textContent = "Field opacity";
+    lbl.textContent = "Guide strength";
     const val = document.createElement("span");
     val.className = "value";
     val.textContent = colors.flowFieldOpacity.toFixed(2);

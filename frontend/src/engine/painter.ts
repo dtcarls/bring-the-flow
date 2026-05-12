@@ -1,7 +1,14 @@
-import type { FlowField } from "./field";
 import type { Polyline, CanvasSize } from "./tracer";
 import { makeRng, pickWeighted } from "./rng";
 import type { Palette } from "../palettes/types";
+
+// Brush size 0–12 mapped to canvas pixel widths (at ~1200px canvas width)
+const BRUSH_PX = [0.5, 0.75, 1.0, 1.5, 2.0, 2.5, 3.0, 4.0, 5.5, 7.0, 9.0, 11.0, 14.0];
+
+function brushSizeToPx(size: number): number {
+  const idx = Math.max(0, Math.min(12, Math.round(size)));
+  return BRUSH_PX[idx];
+}
 
 export interface StyleParams {
   strokeMin: number;
@@ -19,7 +26,6 @@ export interface LayerParams {
 
 export interface RenderInput {
   size: CanvasSize;
-  field: FlowField;
   lines: Polyline[];
   palette: Palette;
   style: StyleParams;
@@ -65,21 +71,21 @@ function styleLines(input: RenderInput): StyledLine[] {
         break;
       }
     }
-    const width =
-      style.strokeMin + rng() * (style.strokeMax - style.strokeMin);
+    const size = style.strokeMin + rng() * (style.strokeMax - style.strokeMin);
+    const width = brushSizeToPx(size);
     return { color, width, points: ln.points };
   });
 }
 
 export function paintCanvas(ctx: CanvasRenderingContext2D, input: RenderInput): void {
-  const { size, field, layers, palette, style } = input;
+  const { size, layers, palette, style } = input;
   const bg = style.background ?? palette.background ?? "#f1ece0";
   ctx.save();
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, size.width, size.height);
 
   if (layers.showFlowField) {
-    drawFieldStreaks(ctx, field, size, layers.flowFieldOpacity);
+    drawGuideLines(ctx, input.lines, layers.flowFieldOpacity);
   }
 
   if (layers.showColors) {
@@ -103,7 +109,7 @@ export function paintCanvas(ctx: CanvasRenderingContext2D, input: RenderInput): 
 }
 
 export function paintSvg(input: RenderInput): string {
-  const { size, field, layers, palette, style } = input;
+  const { size, layers, palette, style } = input;
   const bg = style.background ?? palette.background ?? "#f1ece0";
   const parts: string[] = [];
   parts.push(
@@ -112,7 +118,7 @@ export function paintSvg(input: RenderInput): string {
   parts.push(`<rect width="${size.width}" height="${size.height}" fill="${bg}"/>`);
 
   if (layers.showFlowField) {
-    parts.push(svgFieldStreaks(field, size, layers.flowFieldOpacity));
+    parts.push(svgGuideLines(input.lines, layers.flowFieldOpacity));
   }
 
   if (layers.showColors) {
@@ -143,45 +149,34 @@ function pointsToPathD(p: Float32Array): string {
   return s;
 }
 
-function drawFieldStreaks(
+function drawGuideLines(
   ctx: CanvasRenderingContext2D,
-  field: FlowField,
-  size: CanvasSize,
+  lines: Polyline[],
   opacity: number,
 ): void {
-  const step = 24;
   ctx.save();
   ctx.globalAlpha = opacity;
-  ctx.strokeStyle = "#2c3e57";
-  ctx.lineWidth = 1;
-  for (let y = step / 2; y < size.height; y += step) {
-    for (let x = step / 2; x < size.width; x += step) {
-      const a = field.angleAt(x, y);
-      const len = step * 0.4;
-      ctx.beginPath();
-      ctx.moveTo(x - Math.cos(a) * len, y - Math.sin(a) * len);
-      ctx.lineTo(x + Math.cos(a) * len, y + Math.sin(a) * len);
-      ctx.stroke();
+  ctx.strokeStyle = "#888888";
+  ctx.lineWidth = 0.75;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  for (const ln of lines) {
+    ctx.beginPath();
+    ctx.moveTo(ln.points[0], ln.points[1]);
+    for (let i = 2; i < ln.points.length; i += 2) {
+      ctx.lineTo(ln.points[i], ln.points[i + 1]);
     }
+    ctx.stroke();
   }
   ctx.restore();
 }
 
-function svgFieldStreaks(field: FlowField, size: CanvasSize, opacity: number): string {
-  const step = 24;
+function svgGuideLines(lines: Polyline[], opacity: number): string {
   const parts: string[] = [
-    `<g stroke="#2c3e57" stroke-width="1" opacity="${opacity}">`,
+    `<g stroke="#888888" stroke-width="0.75" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="${opacity}">`,
   ];
-  for (let y = step / 2; y < size.height; y += step) {
-    for (let x = step / 2; x < size.width; x += step) {
-      const a = field.angleAt(x, y);
-      const len = step * 0.4;
-      const x0 = (x - Math.cos(a) * len).toFixed(1);
-      const y0 = (y - Math.sin(a) * len).toFixed(1);
-      const x1 = (x + Math.cos(a) * len).toFixed(1);
-      const y1 = (y + Math.sin(a) * len).toFixed(1);
-      parts.push(`<line x1="${x0}" y1="${y0}" x2="${x1}" y2="${y1}"/>`);
-    }
+  for (const ln of lines) {
+    parts.push(`<path d="${pointsToPathD(ln.points)}"/>`);
   }
   parts.push("</g>");
   return parts.join("");

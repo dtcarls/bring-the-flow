@@ -30,8 +30,8 @@ class TracingParams(BaseModel):
 
 
 class StyleParams(BaseModel):
-    strokeMin: float = 1.0
-    strokeMax: float = 3.5
+    strokeMin: float = 1.0  # brush size 0–12
+    strokeMax: float = 4.0  # brush size 0–12
     strokeOpacity: float = 1.0
     paletteId: str = "fidenza-warm"
     colorAssignment: Literal["random", "banded", "by-length", "by-angle"] = "random"
