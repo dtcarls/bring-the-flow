@@ -33,6 +33,7 @@ RUN pip install --upgrade pip \
         "uvicorn[standard]>=0.32" \
         "pydantic>=2.9" \
         "cairosvg>=2.7" \
+        "python-multipart>=0.0.6" \
         "pillow>=10.4"
 
 COPY backend/ ./backend/
