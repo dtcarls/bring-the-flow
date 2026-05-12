@@ -1,7 +1,7 @@
 import type { Palette } from "./palettes/types";
 
 export interface ProjectParams {
-  canvas: { width: number; height: number };
+  canvas: { widthIn: number; heightIn: number };
   field: {
     seed: number;
     noiseScale: number;

@@ -3,7 +3,7 @@ import type { ProjectParams, ProjectSummary } from "./api";
 
 export function defaultParams(): ProjectParams {
   return {
-    canvas: { width: 1200, height: 1500 },
+    canvas: { widthIn: 48, heightIn: 60 },
     field: {
       seed: 1,
       noiseScale: 0.0035,
@@ -15,10 +15,10 @@ export function defaultParams(): ProjectParams {
       noiseZ: 0.0,
     },
     tracing: {
-      lineSpacing: 6,
-      stepSize: 1.5,
-      minLength: 20,
-      maxLength: 800,
+      lineSpacing: 0.25,
+      stepSize: 0.06,
+      minLength: 0.8,
+      maxLength: 32,
       numSeeds: 4000,
       margin: 0,
     },

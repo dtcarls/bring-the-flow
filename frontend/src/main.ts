@@ -1,7 +1,9 @@
 import { api } from "./api";
+import type { ProjectParams } from "./api";
 import { defaultParams, store } from "./state";
 import { FlowField } from "./engine/field";
 import { Tracer } from "./engine/tracer";
+import type { CanvasSize, TracingParams } from "./engine/tracer";
 import { paintCanvas, paintSvg } from "./engine/painter";
 import { mountControls } from "./ui/controls";
 import { mountPaletteEditor } from "./ui/paletteEditor";
@@ -11,6 +13,26 @@ const canvas = document.getElementById("preview") as HTMLCanvasElement;
 const status = document.getElementById("status")!;
 const projectSelect = document.getElementById("project-select") as HTMLSelectElement;
 
+/** Preview resolution: pixels per inch. 48×60" → 1200×1500 px. */
+const PREVIEW_PPI = 25;
+
+function canvasPx(p: ProjectParams): CanvasSize {
+  return {
+    width: Math.round(p.canvas.widthIn * PREVIEW_PPI),
+    height: Math.round(p.canvas.heightIn * PREVIEW_PPI),
+  };
+}
+
+function tracingPx(p: ProjectParams, ppi: number): TracingParams {
+  return {
+    ...p.tracing,
+    lineSpacing: p.tracing.lineSpacing * ppi,
+    stepSize: p.tracing.stepSize * ppi,
+    minLength: p.tracing.minLength * ppi,
+    maxLength: p.tracing.maxLength * ppi,
+  };
+}
+
 let renderToken = 0;
 
 function setStatus(text: string): void {
@@ -18,7 +40,7 @@ function setStatus(text: string): void {
 }
 
 function fitCanvasToParams(): void {
-  const { width, height } = store.params.canvas;
+  const { width, height } = canvasPx(store.params);
   canvas.width = width;
   canvas.height = height;
   // Fit-to-screen visually (CSS sizing).
@@ -35,11 +57,13 @@ async function render(): Promise<void> {
   fitCanvasToParams();
   const ctx = canvas.getContext("2d")!;
   const t0 = performance.now();
+  const sizePx = canvasPx(store.params);
+  const ppi = sizePx.width / store.params.canvas.widthIn;
   const field = new FlowField(store.params.field);
   const tracer = new Tracer(
     field,
-    store.params.canvas,
-    store.params.tracing,
+    sizePx,
+    tracingPx(store.params, ppi),
   );
   // Yield once so UI can paint sliders before we crunch.
   await new Promise(requestAnimationFrame);
@@ -49,7 +73,8 @@ async function render(): Promise<void> {
   if (myToken !== renderToken) return;
 
   paintCanvas(ctx, {
-    size: store.params.canvas,
+    size: sizePx,
+    ppi,
     lines,
     palette: store.currentPalette(),
     style: store.params.style,
@@ -61,11 +86,14 @@ async function render(): Promise<void> {
 }
 
 function buildSvgForExport(): string {
+  const sizePx = canvasPx(store.params);
+  const ppi = sizePx.width / store.params.canvas.widthIn;
   const field = new FlowField(store.params.field);
-  const tracer = new Tracer(field, store.params.canvas, store.params.tracing);
+  const tracer = new Tracer(field, sizePx, tracingPx(store.params, ppi));
   const lines = tracer.trace(store.params.field.seed);
   return paintSvg({
-    size: store.params.canvas,
+    size: sizePx,
+    ppi,
     lines,
     palette: store.currentPalette(),
     style: store.params.style,

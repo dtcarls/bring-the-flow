@@ -3,13 +3,14 @@ import { makeRng, pickWeighted } from "./rng";
 import type { Palette } from "../palettes/types";
 
 // Standard brush size numbers (flat/wash brushes). The slider index (0–12)
-// maps to these real brush sizes; pixel widths scale at ~1.5px per size unit.
+// maps to these real brush sizes; physical widths in inches at 25 px/in baseline.
 export const BRUSH_SIZES = [0, 1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 24] as const;
-const BRUSH_PX           = [0.5, 1.5, 3.0, 6.0, 9.0, 12.0, 15.0, 18.0, 21.0, 24.0, 27.0, 30.0, 36.0];
+// Physical width in inches for each brush index.
+const BRUSH_IN = [0.02, 0.06, 0.12, 0.24, 0.36, 0.48, 0.60, 0.72, 0.84, 0.96, 1.08, 1.20, 1.44];
 
-function brushSizeToPx(idx: number): number {
+function brushSizeToPx(idx: number, ppi: number): number {
   const i = Math.max(0, Math.min(12, Math.round(idx)));
-  return BRUSH_PX[i];
+  return BRUSH_IN[i] * ppi;
 }
 
 export interface StyleParams {
@@ -28,6 +29,8 @@ export interface LayerParams {
 
 export interface RenderInput {
   size: CanvasSize;
+  /** Pixels per inch — used to scale brush widths to physical dimensions. */
+  ppi: number;
   lines: Polyline[];
   palette: Palette;
   style: StyleParams;
@@ -74,7 +77,7 @@ function styleLines(input: RenderInput): StyledLine[] {
       }
     }
     const size = style.strokeMin + rng() * (style.strokeMax - style.strokeMin);
-    const width = brushSizeToPx(size);
+    const width = brushSizeToPx(size, input.ppi);
     return { color, width, points: ln.points };
   });
 }
@@ -111,11 +114,13 @@ export function paintCanvas(ctx: CanvasRenderingContext2D, input: RenderInput): 
 }
 
 export function paintSvg(input: RenderInput): string {
-  const { size, layers, palette, style } = input;
+  const { size, ppi, layers, palette, style } = input;
   const bg = style.background ?? palette.background ?? "#f1ece0";
+  const widthIn = (size.width / ppi).toFixed(4);
+  const heightIn = (size.height / ppi).toFixed(4);
   const parts: string[] = [];
   parts.push(
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size.width} ${size.height}" width="${size.width}" height="${size.height}">`,
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size.width} ${size.height}" width="${widthIn}in" height="${heightIn}in">`,
   );
   parts.push(`<rect width="${size.width}" height="${size.height}" fill="${bg}"/>`);
 

@@ -21,12 +21,12 @@ class FieldParams(BaseModel):
 
 
 class TracingParams(BaseModel):
-    lineSpacing: float = 6.0
-    stepSize: float = 1.5
-    minLength: float = 20.0
-    maxLength: float = 800.0
+    lineSpacing: float = 0.25
+    stepSize: float = 0.06
+    minLength: float = 0.8
+    maxLength: float = 32.0
     numSeeds: int = 4000
-    margin: float = 40.0
+    margin: float = 0.0
 
 
 class StyleParams(BaseModel):
@@ -45,8 +45,8 @@ class LayerParams(BaseModel):
 
 
 class CanvasParams(BaseModel):
-    width: int = 1200
-    height: int = 1500
+    widthIn: float = 48.0
+    heightIn: float = 60.0
 
 
 class ProjectParams(BaseModel):

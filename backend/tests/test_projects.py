@@ -27,7 +27,7 @@ def test_project_crud_round_trip() -> None:
         json={
             "name": "Renamed",
             "params": {
-                "canvas": {"width": 1000, "height": 1000},
+                "canvas": {"widthIn": 24.0, "heightIn": 30.0},
                 "field": {
                     "seed": 42,
                     "noiseScale": 0.005,
@@ -37,12 +37,12 @@ def test_project_crud_round_trip() -> None:
                     "curl": True,
                 },
                 "tracing": {
-                    "lineSpacing": 4.0,
-                    "stepSize": 1.0,
-                    "minLength": 30,
-                    "maxLength": 500,
+                    "lineSpacing": 0.2,
+                    "stepSize": 0.05,
+                    "minLength": 1.0,
+                    "maxLength": 20.0,
                     "numSeeds": 2000,
-                    "margin": 30,
+                    "margin": 0,
                 },
                 "style": {
                     "strokeMin": 1.0,
