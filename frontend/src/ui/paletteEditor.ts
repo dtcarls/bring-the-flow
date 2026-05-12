@@ -215,6 +215,58 @@ export function mountPaletteEditor(host: HTMLElement, onChange: () => void): voi
       host.append(actions);
     }
 
+    // Extract palette from image
+    const extractSection = document.createElement("div");
+    extractSection.className = "new-preset-section";
+    extractSection.style.marginTop = "10px";
+
+    const extractLabel = document.createElement("span");
+    extractLabel.textContent = "Extract from image";
+    extractLabel.style.fontSize = "11px";
+    extractLabel.style.color = "var(--muted)";
+    extractLabel.style.display = "block";
+    extractLabel.style.marginBottom = "4px";
+
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.accept = "image/*";
+    fileInput.style.display = "none";
+
+    const extractBtn = document.createElement("button");
+    extractBtn.textContent = "Upload image…";
+    extractBtn.style.width = "100%";
+
+    extractBtn.addEventListener("click", () => fileInput.click());
+
+    fileInput.addEventListener("change", async () => {
+      const file = fileInput.files?.[0];
+      if (!file) return;
+      extractBtn.textContent = "Extracting…";
+      extractBtn.disabled = true;
+      try {
+        const result = await api.extractPaletteFromImage(file);
+        const created = await api.createPalette({
+          name: file.name.replace(/\.[^.]+$/, "") + " palette",
+          colors: result.colors,
+          background: result.background,
+          inspiredBy: null,
+        });
+        store.palettes.push(created);
+        store.params.style.paletteId = created.id;
+        onChange();
+        render();
+      } catch (err) {
+        alert(`Could not extract palette: ${err}`);
+      } finally {
+        extractBtn.textContent = "Upload image…";
+        extractBtn.disabled = false;
+        fileInput.value = "";
+      }
+    });
+
+    extractSection.append(extractLabel, extractBtn, fileInput);
+    host.append(extractSection);
+
     // Save as new preset (always available)
     const newSection = document.createElement("div");
     newSection.className = "new-preset-section";

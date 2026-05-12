@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 PaperSize = Literal["A5", "A4", "A3", "A2", "Letter", "Legal", "Tabloid", "Square"]
@@ -88,12 +88,26 @@ class Palette(BaseModel):
     background: str | None = None
     inspiredBy: str | None = None
 
+    @field_validator("colors")
+    @classmethod
+    def exactly_six_colors(cls, v: list[PaletteColor]) -> list[PaletteColor]:
+        if len(v) != 6:
+            raise ValueError(f"palette must have exactly 6 colors, got {len(v)}")
+        return v
+
 
 class PaletteCreate(BaseModel):
     name: str
     colors: list[PaletteColor]
     background: str | None = None
     inspiredBy: str | None = None
+
+    @field_validator("colors")
+    @classmethod
+    def exactly_six_colors(cls, v: list[PaletteColor]) -> list[PaletteColor]:
+        if len(v) != 6:
+            raise ValueError(f"palette must have exactly 6 colors, got {len(v)}")
+        return v
 
 
 class ExportRequest(BaseModel):

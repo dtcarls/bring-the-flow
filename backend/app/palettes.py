@@ -5,9 +5,12 @@ user-saved palettes live under /data/palettes/.
 """
 from __future__ import annotations
 
+import io
 import secrets
+from collections import Counter
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, UploadFile
+from PIL import Image
 
 from .models import Palette, PaletteColor, PaletteCreate
 from .storage import (
@@ -35,7 +38,6 @@ PRESETS: list[Palette] = [
         colors=[
             _c("#b8412f"), _c("#d97a2c"), _c("#e7b04a"),
             _c("#356b5b"), _c("#2c3e57"), _c("#efe4c8"),
-            _c("#1a1a1a", 0.5),
         ],
     ),
     Palette(
@@ -65,7 +67,7 @@ PRESETS: list[Palette] = [
         background="#e8e2d4",
         colors=[
             _c("#3b3a36", 1.5), _c("#7c6a4f"), _c("#b89968"),
-            _c("#5b6e5f"), _c("#c44a2a", 0.4),
+            _c("#5b6e5f"), _c("#c44a2a", 0.4), _c("#d8cfc0", 0.6),
         ],
     ),
     Palette(
@@ -75,7 +77,7 @@ PRESETS: list[Palette] = [
         background="#f1ece0",
         colors=[
             _c("#1c3f8f", 2.0), _c("#2a5fb5", 1.5), _c("#0c1a3a", 1.0),
-            _c("#7f9ed3", 0.8), _c("#0a0a0a", 0.3),
+            _c("#7f9ed3", 0.8), _c("#0a0a0a", 0.3), _c("#c8d8f0", 0.5),
         ],
     ),
     Palette(
@@ -85,7 +87,7 @@ PRESETS: list[Palette] = [
         background="#f1ece0",
         colors=[
             _c("#b8201f", 2.0), _c("#e23a2e", 1.5), _c("#5a0e10", 1.0),
-            _c("#d68b7c", 0.8), _c("#0a0a0a", 0.3),
+            _c("#d68b7c", 0.8), _c("#0a0a0a", 0.3), _c("#f0d8d0", 0.5),
         ],
     ),
 ]
@@ -93,6 +95,45 @@ PRESETS: list[Palette] = [
 
 def _preset_ids() -> set[str]:
     return {p.id for p in PRESETS}
+
+
+def _extract_colors_from_image(data: bytes, n_colors: int = 7) -> tuple[list[str], str]:
+    """Return (palette_colors[6], background_hex) extracted from image bytes."""
+    img = Image.open(io.BytesIO(data)).convert("RGB")
+    img.thumbnail((200, 200), Image.LANCZOS)
+    quantized = img.quantize(colors=n_colors, method=Image.Quantize.MEDIANCUT)
+    palette_data = quantized.getpalette() or []
+    actual_n = len(palette_data) // 3
+    counts: Counter[int] = Counter(quantized.getdata())
+    # Build list of (hex, frequency) sorted by frequency descending
+    items = []
+    for i in range(actual_n):
+        r, g, b = palette_data[i * 3], palette_data[i * 3 + 1], palette_data[i * 3 + 2]
+        items.append((f"#{r:02x}{g:02x}{b:02x}", counts.get(i, 0)))
+    items.sort(key=lambda x: -x[1])
+    # Pad with neutral greys if the image has very few distinct colors
+    while len(items) < 7:
+        items.append(("#888888", 0))
+    background = items[0][0]
+    colors = [c[0] for c in items[1:7]]
+    return colors, background
+
+
+@router.post("/extract-from-image")
+async def extract_palette_from_image(file: UploadFile) -> dict:
+    if not (file.content_type or "").startswith("image/"):
+        raise HTTPException(status_code=400, detail="uploaded file must be an image")
+    data = await file.read()
+    if len(data) > 10 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="image too large (max 10 MB)")
+    try:
+        colors, background = _extract_colors_from_image(data)
+    except Exception as exc:
+        raise HTTPException(status_code=422, detail=f"could not process image: {exc}") from exc
+    return {
+        "colors": [{"hex": h, "weight": 1.0} for h in colors],
+        "background": background,
+    }
 
 
 @router.get("")
