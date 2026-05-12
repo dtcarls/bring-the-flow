@@ -24,7 +24,7 @@ export function defaultParams(): ProjectParams {
     },
     style: {
       strokeMin: 1,
-      strokeMax: 4,
+      strokeMax: 3,
       strokeOpacity: 1.0,
       paletteId: "fidenza-warm",
       colorAssignment: "random",

@@ -1,4 +1,5 @@
 import { store } from "../state";
+import { BRUSH_SIZES } from "../engine/painter";
 
 interface SliderSpec {
   label: string;
@@ -9,6 +10,8 @@ interface SliderSpec {
   set: (v: number) => void;
   format?: (v: number) => string;
   description?: string;
+  /** When true the value display is a read-only label (for non-numeric formats like "#4"). */
+  displayLabel?: boolean;
 }
 
 function slider(spec: SliderSpec, onChange: () => void): HTMLElement {
@@ -31,14 +34,6 @@ function slider(spec: SliderSpec, onChange: () => void): HTMLElement {
     labelWrap.append(info);
   }
 
-  const numInput = document.createElement("input");
-  numInput.type = "number";
-  numInput.className = "slider-num";
-  numInput.min = String(spec.min);
-  numInput.max = String(spec.max);
-  numInput.step = String(spec.step);
-  numInput.value = fmt(spec.get());
-
   const rangeInput = document.createElement("input");
   rangeInput.type = "range";
   rangeInput.min = String(spec.min);
@@ -46,24 +41,45 @@ function slider(spec: SliderSpec, onChange: () => void): HTMLElement {
   rangeInput.step = String(spec.step);
   rangeInput.value = String(spec.get());
 
-  rangeInput.addEventListener("input", () => {
-    const v = parseFloat(rangeInput.value);
-    spec.set(v);
-    numInput.value = fmt(v);
-    onChange();
-  });
+  if (spec.displayLabel) {
+    const display = document.createElement("span");
+    display.className = "slider-num";
+    display.style.textAlign = "right";
+    display.style.fontVariantNumeric = "tabular-nums";
+    display.textContent = fmt(spec.get());
+    rangeInput.addEventListener("input", () => {
+      const v = parseFloat(rangeInput.value);
+      spec.set(v);
+      display.textContent = fmt(v);
+      onChange();
+    });
+    row.append(labelWrap, display, rangeInput);
+  } else {
+    const numInput = document.createElement("input");
+    numInput.type = "number";
+    numInput.className = "slider-num";
+    numInput.min = String(spec.min);
+    numInput.max = String(spec.max);
+    numInput.step = String(spec.step);
+    numInput.value = fmt(spec.get());
+    rangeInput.addEventListener("input", () => {
+      const v = parseFloat(rangeInput.value);
+      spec.set(v);
+      numInput.value = fmt(v);
+      onChange();
+    });
+    numInput.addEventListener("change", () => {
+      let v = parseFloat(numInput.value);
+      if (isNaN(v)) v = spec.get();
+      v = Math.max(spec.min, Math.min(spec.max, v));
+      spec.set(v);
+      rangeInput.value = String(v);
+      numInput.value = fmt(v);
+      onChange();
+    });
+    row.append(labelWrap, numInput, rangeInput);
+  }
 
-  numInput.addEventListener("change", () => {
-    let v = parseFloat(numInput.value);
-    if (isNaN(v)) v = spec.get();
-    v = Math.max(spec.min, Math.min(spec.max, v));
-    spec.set(v);
-    rangeInput.value = String(v);
-    numInput.value = fmt(v);
-    onChange();
-  });
-
-  row.append(labelWrap, numInput, rangeInput);
   return row;
 }
 
@@ -350,19 +366,21 @@ export function mountControls(host: HTMLElement, onChange: () => void): void {
         "Brush",
         slider({
           label: "Min brush size",
-          description: "Smallest brush in the mix (0–12 scale). Each stroke is randomly assigned a size between min and max, giving organic hand-painted variation.",
+          description: "Smallest brush in the mix. Sizes follow the standard brush numbering: 0, 1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 24. Each stroke is randomly assigned a size between min and max.",
           min: 0, max: 12, step: 1,
           get: () => p.style.strokeMin,
           set: (v) => (p.style.strokeMin = v),
-          format: (v) => String(Math.round(v)),
+          format: (v) => `#${BRUSH_SIZES[Math.max(0, Math.min(12, Math.round(v)))]}`,
+          displayLabel: true,
         }, onChange),
         slider({
           label: "Max brush size",
-          description: "Largest brush in the mix (0–12 scale). A wider gap between min and max creates more dramatic width variation across strokes.",
+          description: "Largest brush in the mix. A wider gap between min and max creates more dramatic width variation across strokes.",
           min: 0, max: 12, step: 1,
           get: () => p.style.strokeMax,
           set: (v) => (p.style.strokeMax = v),
-          format: (v) => String(Math.round(v)),
+          format: (v) => `#${BRUSH_SIZES[Math.max(0, Math.min(12, Math.round(v)))]}`,
+          displayLabel: true,
         }, onChange),
         slider({
           label: "Opacity",

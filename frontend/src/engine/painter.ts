@@ -2,12 +2,14 @@ import type { Polyline, CanvasSize } from "./tracer";
 import { makeRng, pickWeighted } from "./rng";
 import type { Palette } from "../palettes/types";
 
-// Brush size 0–12 mapped to canvas pixel widths (at ~1200px canvas width)
-const BRUSH_PX = [0.5, 0.75, 1.0, 1.5, 2.0, 2.5, 3.0, 4.0, 5.5, 7.0, 9.0, 11.0, 14.0];
+// Standard brush size numbers (flat/wash brushes). The slider index (0–12)
+// maps to these real brush sizes; pixel widths scale at ~1.5px per size unit.
+export const BRUSH_SIZES = [0, 1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 24] as const;
+const BRUSH_PX           = [0.5, 1.5, 3.0, 6.0, 9.0, 12.0, 15.0, 18.0, 21.0, 24.0, 27.0, 30.0, 36.0];
 
-function brushSizeToPx(size: number): number {
-  const idx = Math.max(0, Math.min(12, Math.round(size)));
-  return BRUSH_PX[idx];
+function brushSizeToPx(idx: number): number {
+  const i = Math.max(0, Math.min(12, Math.round(idx)));
+  return BRUSH_PX[i];
 }
 
 export interface StyleParams {
