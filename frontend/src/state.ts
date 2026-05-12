@@ -20,7 +20,7 @@ export function defaultParams(): ProjectParams {
       minLength: 20,
       maxLength: 800,
       numSeeds: 4000,
-      margin: 40,
+      margin: 0,
     },
     style: {
       strokeMin: 1.0,

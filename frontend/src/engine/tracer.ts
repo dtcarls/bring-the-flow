@@ -7,7 +7,7 @@ export interface TracingParams {
   minLength: number;
   maxLength: number;
   numSeeds: number;
-  margin: number;
+  margin: number; // still present for type compatibility, but always 0
 }
 
 export interface CanvasSize {
@@ -49,13 +49,13 @@ export class Tracer {
   trace(seed: number): Polyline[] {
     const rng = makeRng(seed ^ 0x9e3779b9);
     const lines: Polyline[] = [];
-    const { numSeeds, stepSize, maxLength, minLength, margin } = this.params;
+    const { numSeeds, stepSize, maxLength, minLength } = this.params;
     const w = this.size.width;
     const h = this.size.height;
-    const xMin = margin;
-    const yMin = margin;
-    const xMax = w - margin;
-    const yMax = h - margin;
+    const xMin = 0;
+    const yMin = 0;
+    const xMax = w;
+    const yMax = h;
 
     for (let s = 0; s < numSeeds; s++) {
       const sx = xMin + rng() * (xMax - xMin);

@@ -337,14 +337,7 @@ export function mountControls(host: HTMLElement, onChange: () => void): void {
           set: (v) => (p.tracing.numSeeds = v),
           format: (v) => v.toFixed(0),
         }, onChange),
-        slider({
-          label: "Margin",
-          description: "Blank border zone around the canvas edges where curves cannot start or travel. Useful for a clean compositional border.",
-          min: 0, max: 200, step: 1,
-          get: () => p.tracing.margin,
-          set: (v) => (p.tracing.margin = v),
-          format: (v) => v.toFixed(0),
-        }, onChange),
+        // Margin slider removed; margin is now fixed at 0
       ),
       group(
         "Stroke",
