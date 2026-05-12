@@ -50,7 +50,6 @@ async function render(): Promise<void> {
 
   paintCanvas(ctx, {
     size: store.params.canvas,
-    field,
     lines,
     palette: store.currentPalette(),
     style: store.params.style,
@@ -67,7 +66,6 @@ function buildSvgForExport(): string {
   const lines = tracer.trace(store.params.field.seed);
   return paintSvg({
     size: store.params.canvas,
-    field,
     lines,
     palette: store.currentPalette(),
     style: store.params.style,
