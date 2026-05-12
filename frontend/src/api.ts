@@ -95,6 +95,13 @@ export const api = {
     ),
   deletePalette: (id: string) =>
     j<{ ok: boolean }>(fetch(`/api/palettes/${id}`, { method: "DELETE" })),
+  extractPaletteFromImage: (file: File) => {
+    const fd = new FormData();
+    fd.append("file", file);
+    return j<{ colors: Array<{ hex: string; weight: number }>; background: string }>(
+      fetch("/api/palettes/extract-from-image", { method: "POST", body: fd }),
+    );
+  },
 
   exportProject: (
     id: string,
