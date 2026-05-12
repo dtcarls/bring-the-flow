@@ -87,24 +87,25 @@ def test_palette_presets_present() -> None:
 
 def test_custom_palette_round_trip() -> None:
     c = _client()
+    six_colors = [
+        {"hex": "#112233"}, {"hex": "#445566", "weight": 2.0},
+        {"hex": "#778899"}, {"hex": "#aabbcc"},
+        {"hex": "#ddeeff"}, {"hex": "#001122"},
+    ]
     created = c.post(
         "/api/palettes",
-        json={
-            "name": "My Palette",
-            "colors": [{"hex": "#112233"}, {"hex": "#445566", "weight": 2.0}],
-            "background": "#fafafa",
-        },
+        json={"name": "My Palette", "colors": six_colors, "background": "#fafafa"},
     ).json()
     pid = created["id"]
     assert pid.startswith("user-")
 
     fetched = c.get(f"/api/palettes/{pid}").json()
     assert fetched["name"] == "My Palette"
-    assert len(fetched["colors"]) == 2
+    assert len(fetched["colors"]) == 6
 
     # cannot edit a preset
     bad = c.put(
         "/api/palettes/blue-literal",
-        json={"name": "x", "colors": [{"hex": "#000000"}]},
+        json={"name": "x", "colors": six_colors},
     )
     assert bad.status_code == 400
